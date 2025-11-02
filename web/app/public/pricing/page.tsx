@@ -1,1 +1,0 @@
-﻿export default function Page(){return <h1>Tarifs</h1>}
