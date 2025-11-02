@@ -1,0 +1,1 @@
+﻿export default function Page(){return <h1>À propos</h1>}
