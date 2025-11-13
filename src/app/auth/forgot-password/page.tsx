@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function ForgotPasswordPage() {
   const router = useRouter()
@@ -36,109 +37,78 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.form}>
-        <h1 style={styles.title}>Mot de passe oublié</h1>
-        <p style={styles.subtitle}>
-          Entrez votre adresse email pour recevoir un lien de réinitialisation
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-bandhu-dark via-gray-900 to-bandhu-dark flex items-center justify-center p-6">
+      <div className="w-full max-w-md">
+        {/* Logo/Titre */}
+        <div className="text-center mb-8">
+          <Link href="/">
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-bandhu-primary via-bandhu-secondary to-bandhu-primary bg-clip-text text-transparent cursor-pointer hover:scale-105 transition-transform">
+              Bandhu
+            </h1>
+          </Link>
+          <p className="text-gray-400 mt-2">Réinitialisation du mot de passe</p>
+        </div>
 
-        <form onSubmit={handleSubmit}>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Votre adresse email"
-            required
-            style={styles.input}
-          />
-          
-          <button 
-            type="submit" 
-            disabled={loading}
-            style={styles.button}
+        {/* Formulaire */}
+        <div className="bg-bandhu-card backdrop-blur-sm rounded-2xl border border-bandhu-cardBorder p-8">
+          <h2 className="text-2xl font-bold text-white mb-2 text-center">
+            Mot de passe oublié ?
+          </h2>
+          <p className="text-gray-400 text-sm mb-6 text-center">
+            Entrez votre adresse email pour recevoir un lien de réinitialisation
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-bandhu-primary focus:border-transparent transition"
+                placeholder="votre@email.com"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full px-6 py-3 bg-gradient-to-r from-bandhu-primary to-bandhu-secondary text-white rounded-lg font-semibold hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-bandhu-primary/30"
+            >
+              {loading ? 'Envoi...' : 'Envoyer le lien'}
+            </button>
+          </form>
+
+          {/* Retour connexion */}
+          <div className="text-center mt-6">
+            <Link
+              href="/login"
+              className="text-sm text-bandhu-primary hover:text-bandhu-secondary transition"
+            >
+              ← Retour à la connexion
+            </Link>
+          </div>
+        </div>
+
+        {/* Retour accueil */}
+        <div className="text-center mt-6">
+          <Link
+            href="/"
+            className="text-gray-400 hover:text-bandhu-primary transition text-sm"
           >
-            {loading ? 'Envoi...' : 'Envoyer le lien'}
-          </button>
-
-          {error && <div style={styles.error}>{error}</div>}
-        </form>
-
-        <div style={styles.back}>
-          <a href="/auth/signin" style={styles.backLink}>
-            ← Retour à la connexion
-          </a>
+            ← Retour à l'accueil
+          </Link>
         </div>
       </div>
     </div>
   )
-}
-
-const styles: { [key: string]: React.CSSProperties } = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: '#111',
-    color: '#fff',
-    padding: '2rem',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  form: {
-    width: '100%',
-    maxWidth: '400px',
-    backgroundColor: '#222',
-    padding: '2rem',
-    borderRadius: '8px',
-    boxShadow: '0 0 10px rgba(0,0,0,0.5)',
-  },
-  title: {
-    fontSize: '24px',
-    fontWeight: 'bold',
-    marginBottom: '8px',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: '14px',
-    color: '#ccc',
-    marginBottom: '24px',
-    textAlign: 'center',
-    lineHeight: '1.5',
-  },
-  input: {
-    width: '100%',
-    padding: '12px',
-    fontSize: '16px',
-    borderRadius: '4px',
-    border: '1px solid #555',
-    backgroundColor: '#333',
-    color: '#fff',
-    marginBottom: '16px',
-  },
-  button: {
-    width: '100%',
-    padding: '12px',
-    backgroundColor: '#0070f3',
-    color: '#fff',
-    fontWeight: 'bold',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '16px',
-  },
-  error: {
-    color: '#ff6666',
-    marginTop: '12px',
-    fontSize: '14px',
-    textAlign: 'center',
-  },
-  back: {
-    marginTop: '20px',
-    textAlign: 'center',
-  },
-  backLink: {
-    color: '#888',
-    fontSize: '14px',
-    textDecoration: 'none',
-  }
 }

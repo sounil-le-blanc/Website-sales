@@ -12,7 +12,6 @@ interface Folder {
   createdAt: string;
 }
 
-
 interface Message {
   id: string
   content: string
@@ -43,7 +42,6 @@ export default function ChatPage() {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSending, setIsSending] = useState(false)
-   
 
   // États pour la gestion des conversations
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -78,17 +76,16 @@ export default function ChatPage() {
   }, [editingId])
 
   const loadFolders = async () => {
-  try {
-    const res = await fetch('/api/folder');
-    if (res.ok) {
-      const data = await res.json();
-      setFolders(data.folders);
+    try {
+      const res = await fetch('/api/folder');
+      if (res.ok) {
+        const data = await res.json();
+        setFolders(data.folders);
+      }
+    } catch (err) {
+      console.error('Erreur chargement folders', err);
     }
-  } catch (err) {
-    console.error('Erreur chargement folders', err);
-  }
-};
-
+  };
 
   // Charger la liste des conversations
   const loadConversations = async () => {
@@ -99,7 +96,6 @@ export default function ChatPage() {
         const data = await response.json()
         setConversations(data.conversations)
         
-        // Charger la première conversation automatiquement
         if (data.conversations.length > 0) {
           loadConversation(data.conversations[0].id)
         }
@@ -134,8 +130,10 @@ export default function ChatPage() {
       const response = await fetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: 'Nouvelle conversation',
-          folderId: selectedFolderId })
+        body: JSON.stringify({ 
+          title: 'Nouvelle conversation',
+          folderId: selectedFolderId 
+        })
       })
       
       if (response.ok) {
@@ -159,7 +157,6 @@ export default function ChatPage() {
       if (response.ok) {
         setConversations(prev => prev.filter(conv => conv.id !== conversationId))
         
-        // Si c'était la conversation active, charger une autre
         if (currentConversation?.id === conversationId) {
           const remaining = conversations.filter(conv => conv.id !== conversationId)
           if (remaining.length > 0) {
@@ -230,11 +227,10 @@ export default function ChatPage() {
 
   // Trier les conversations
   const filteredConversations = conversations.filter(conv =>
-  selectedFolderId ? conv.folderId === selectedFolderId : true
-);
+    selectedFolderId ? conv.folderId === selectedFolderId : true
+  );
 
   const sortedConversations = conversations ? [...conversations].sort((a, b) => {
-  
     if (sortOrder === 'date') {
       return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
     } else {
@@ -242,7 +238,7 @@ export default function ChatPage() {
     }
   }) : []
 
-  // Envoyer un message (fonction existante)
+  // Envoyer un message
   const sendMessage = async () => {
     if (!input.trim() || isSending) return
     
@@ -323,14 +319,7 @@ export default function ChatPage() {
 
   if (status === 'loading') {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh', 
-        background: '#0f0f23',
-        color: 'white'
-      }}>
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-bandhu-dark via-gray-900 to-bandhu-dark text-white">
         Chargement...
       </div>
     )
@@ -341,98 +330,49 @@ export default function ChatPage() {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#0f0f23', fontFamily: 'system-ui, sans-serif' }}>
+    <div className="flex h-screen bg-gradient-to-br from-bandhu-dark via-gray-900 to-bandhu-dark">
       
       {/* Sidebar */}
-      <div style={{ 
-        width: '320px', 
-        background: '#1a1a2e', 
-        padding: '20px', 
-        color: 'white',
-        borderRight: '1px solid #333',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
+      <div className="w-80 bg-gray-900/50 backdrop-blur-sm p-5 text-white border-r border-gray-800 flex flex-col">
         
         {/* INFO USER */}
-        <div style={{ 
-          marginBottom: '20px', 
-          borderBottom: '1px solid #333', 
-          paddingBottom: '15px' 
-        }}>
-          <p style={{ fontSize: '12px', color: '#888', margin: '0 0 5px 0' }}>Connecté en tant que</p>
-          <p style={{ fontWeight: 'bold', margin: '0', fontSize: '14px' }}>{session?.user?.email}</p>
+        <div className="mb-5 border-b border-gray-800 pb-4">
+          <p className="text-xs text-gray-500 mb-1">Connecté en tant que</p>
+          <p className="font-bold text-sm">{session?.user?.email}</p>
         </div>
 
         {/* HEADER */}
-        <div style={{ marginBottom: '20px' }}>
-          <h2 style={{ margin: '0 0 15px 0', fontSize: '18px', color: '#60a5fa' }}>Chat avec Ombrelien</h2>
+        <div className="mb-5">
+          <h2 className="mb-4 text-lg text-bandhu-primary font-semibold">Chat avec Ombrelien</h2>
           
-          {/* Boutons d'action */}
-          
+          {/* Bouton nouveau dossier */}
           <button
-  onClick={async () => {
-    const name = prompt('Nom du dossier ?');
-    if (!name) return;
-    const res = await fetch('/api/folder', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name })
-    });
+            onClick={async () => {
+              const name = prompt('Nom du dossier ?');
+              if (!name) return;
+              const res = await fetch('/api/folder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+              });
 
-    if (res.ok) {
-      const data = await res.json();
-      setFolders(prev => [data.folder, ...(prev || [])]);
-    }
-  }}
-  style={{
-    padding: '10px',
-    background: '#10b981',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '13px',
-    fontWeight: '500',
-    marginBottom: '8px'
-  }}
->
-  + Dossier
-</button>
+              if (res.ok) {
+                const data = await res.json();
+                setFolders(prev => [data.folder, ...(prev || [])]);
+              }
+            }}
+            className="w-full px-4 py-2.5 bg-gradient-to-br from-purple-900/90 to-ble-700/90 text-white rounded-lg text-sm font-medium mb-2 transition"
+          >
+            + Dossier
+          </button>
 
-
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
+          {/* Boutons d'action */}
+          <div className="flex gap-2 mb-4">
             <button 
               onClick={createNewConversation}
-              style={{ 
-                flex: 1,
-                padding: '10px', 
-                background: '#2563eb', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: '500'
-              }}
+              className="flex-1 px-4 py-2.5 bg-gradient-to-br from-purple-900/90 to-ble-700/90 hover:scale-105 text-white rounded-lg text-sm font-medium transition-transform"
             >
-              + Nouvelle
-            </button>
-            
-            <button 
-              onClick={() => setSortOrder(sortOrder === 'date' ? 'name' : 'date')}
-              style={{ 
-                padding: '10px 12px', 
-                background: '#374151', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '13px'
-              }}
-              title={`Trier par ${sortOrder === 'date' ? 'nom' : 'date'}`}
-            >
-              {sortOrder === 'date' ? '📅' : '🔤'}
+              + Nouvelle conversation
             </button>
           </div>
         </div>
@@ -464,87 +404,57 @@ export default function ChatPage() {
 </div>
 
         
-        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'visible' }}>
+        {/* LISTE DES CONVERSATIONS */}
+        <div className="flex-1 overflow-y-auto overflow-x-visible">
           {isLoading ? (
-            <div style={{ textAlign: 'center', color: '#888', padding: '20px' }}>
+            <div className="text-center text-gray-500 p-5">
               Chargement...
             </div>
           ) : sortedConversations.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#888', padding: '20px', fontSize: '14px' }}>
+            <div className="text-center text-gray-500 p-5 text-sm">
               Aucune conversation
             </div>
           ) : (
             sortedConversations.map(conv => (
               <div
                 key={conv.id}
-                style={{
-                  position: 'relative',
-                  marginBottom: '8px',
-                  background: currentConversation?.id === conv.id ? '#2563eb' : 'transparent',
-                  border: currentConversation?.id === conv.id ? '1px solid #3b82f6' : '1px solid transparent',
-                  borderRadius: '8px',
-                  overflow: 'visible'
-                }}
+                className={`relative mb-2 rounded-lg overflow-visible ${
+                  currentConversation?.id === conv.id 
+                    ? 'bg-bandhu-primary/20 border border-bandhu-primary' 
+                    : 'border border-transparent'
+                }`}
               >
                 {editingId === conv.id ? (
                   // Mode édition
-                  <div style={{ padding: '12px' }}>
+                  <div className="p-3">
                     <input
                       ref={editInputRef}
                       value={editingTitle}
                       onChange={(e) => setEditingTitle(e.target.value)}
-                      onKeyPress={(e) => {
+                      onKeyDown={(e) => {
                         if (e.key === 'Enter') confirmEdit()
                         if (e.key === 'Escape') cancelEdit()
                       }}
                       onBlur={confirmEdit}
-                      style={{
-                        width: '100%',
-                        padding: '6px 8px',
-                        background: '#374151',
-                        color: 'white',
-                        border: '1px solid #60a5fa',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        fontWeight: '500'
-                      }}
+                      className="w-full px-2 py-1.5 bg-gray-700 text-white border border-bandhu-primary rounded text-sm font-medium"
                     />
                   </div>
                 ) : deleteConfirm === conv.id ? (
                   // Mode confirmation suppression
-                  <div style={{ padding: '12px', background: '#dc2626' }}>
-                    <div style={{ fontSize: '13px', marginBottom: '8px', color: 'white' }}>
+                  <div className="p-3 bg-red-600 rounded-lg">
+                    <div className="text-sm mb-2 text-white">
                       Supprimer cette conversation ?
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div className="flex gap-2">
                       <button
                         onClick={() => deleteConversation(conv.id)}
-                        style={{
-                          flex: 1,
-                          padding: '4px 8px',
-                          background: 'white',
-                          color: '#dc2626',
-                          border: 'none',
-                          borderRadius: '4px',
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          fontWeight: '500'
-                        }}
+                        className="flex-1 px-2 py-1 bg-white text-red-600 rounded text-xs font-medium"
                       >
                         Confirmer
                       </button>
                       <button
                         onClick={() => setDeleteConfirm(null)}
-                        style={{
-                          flex: 1,
-                          padding: '4px 8px',
-                          background: 'transparent',
-                          color: 'white',
-                          border: '1px solid white',
-                          borderRadius: '4px',
-                          fontSize: '12px',
-                          cursor: 'pointer'
-                        }}
+                        className="flex-1 px-2 py-1 bg-transparent text-white border border-white rounded text-xs"
                       >
                         Annuler
                       </button>
@@ -554,115 +464,53 @@ export default function ChatPage() {
                   // Mode normal
                   <div
                     onClick={() => loadConversation(conv.id)}
-                    style={{
-                      padding: '12px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (currentConversation?.id !== conv.id) {
-                        e.currentTarget.style.background = '#333'
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (currentConversation?.id !== conv.id) {
-                        e.currentTarget.style.background = 'transparent'
-                      }
-                    }}
+                    className={`p-3 cursor-pointer transition hover:bg-gray-800/50 flex justify-between items-start ${
+                      currentConversation?.id === conv.id ? '' : ''
+                    }`}
                   >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ 
-                        fontSize: '14px', 
-                        fontWeight: '500',
-                        marginBottom: '4px',
-                        color: currentConversation?.id === conv.id ? 'white' : '#e5e5e5',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-medium mb-1 overflow-hidden text-ellipsis whitespace-nowrap ${
+                        currentConversation?.id === conv.id ? 'text-white' : 'text-gray-300'
+                      }`}>
                         {conv.title || 'Conversation sans titre'}
                       </div>
-                      <div style={{ 
-                        fontSize: '12px', 
-                        color: currentConversation?.id === conv.id ? '#bfdbfe' : '#888' 
-                      }}>
+                      <div className={`text-xs ${
+                        currentConversation?.id === conv.id ? 'text-bandhu-primary/80' : 'text-gray-500'
+                      }`}>
                         {formatDate(conv.updatedAt)}
                       </div>
                     </div>
                     
                     {/* Menu d'actions */}
-                    <div style={{ position: 'relative' }}>
+                    <div className="relative">
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
                           setOpenMenuId(openMenuId === conv.id ? null : conv.id)
                         }}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#888',
-                          cursor: 'pointer',
-                          padding: '4px',
-                          borderRadius: '4px',
-                          fontSize: '16px'
-                        }}
+                        className="p-1 text-gray-500 hover:text-gray-300 rounded text-base"
                       >
                         ⋮
                       </button>
                       
                       {openMenuId === conv.id && (
-                        <div style={{
-                          position: 'absolute',
-                          top: '100%',
-                          right: 0,
-                          background: '#374151',
-                          border: '1px solid #4b5563',
-                          borderRadius: '6px',
-                          padding: '4px',
-                          zIndex: 1000,
-                          minWidth: '120px'
-                        }}>
+                        <div className="absolute top-full right-0 bg-gray-700 border border-gray-600 rounded-lg p-1 z-50 min-w-[120px] shadow-lg">
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
-                              console.log('Clique renommer pour:', conv.id)
                               startEditing(conv)
                             }}
-                            style={{
-                              width: '100%',
-                              padding: '6px 8px',
-                              background: 'transparent',
-                              border: 'none',
-                              color: 'white',
-                              cursor: 'pointer',
-                              borderRadius: '4px',
-                              fontSize: '13px',
-                              textAlign: 'left'
-                            }}
+                            className="w-full px-2 py-1.5 text-white hover:bg-gray-600 rounded text-xs text-left"
                           >
                             ✏️ Renommer
                           </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
-                              console.log('Clique supprimer pour:', conv.id)
                               setDeleteConfirm(conv.id)
                               setOpenMenuId(null)
                             }}
-                            style={{
-                              width: '100%',
-                              padding: '6px 8px',
-                              background: 'transparent',
-                              border: 'none',
-                              color: '#f87171',
-                              cursor: 'pointer',
-                              borderRadius: '4px',
-                              fontSize: '13px',
-                              textAlign: 'left'
-                            }}
+                            className="w-full px-2 py-1.5 text-red-400 hover:bg-gray-600 rounded text-xs text-left"
                           >
                             🗑️ Supprimer
                           </button>
@@ -678,252 +526,133 @@ export default function ChatPage() {
       </div>
 
       {/* Chat Area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div className="flex-1 flex flex-col">
         
         {/* Header Chat */}
         {currentConversation && (
-          <div style={{ 
-            padding: '20px', 
-            borderBottom: '1px solid #333',
-            background: '#16213e'
-          }}>
-            <h3 style={{ 
-              margin: 0, 
-              color: '#60a5fa', 
-              fontSize: '16px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}>
+          <div className="p-5 border-b border-gray-800 bg-gray-900/30">
+            <h3 className="text-bandhu-primary font-medium overflow-hidden text-ellipsis whitespace-nowrap">
               {currentConversation.title || 'Conversation'}
             </h3>
           </div>
         )}
 
-        {/* Messages */}
-        <div style={{ 
-          flex: 1, 
-          padding: '20px', 
-          overflowY: 'auto',
-          background: '#0f0f23'
-        }}>
-          {!currentConversation ? (
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center', 
-              height: '100%',
-              color: '#888',
-              fontSize: '16px'
-            }}>
-              Sélectionnez une conversation ou créez-en une nouvelle
-            </div>
-          ) : messages.length === 0 ? (
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center', 
-              height: '100%',
-              color: '#888',
-              fontSize: '16px'
-            }}>
-              Commencez votre conversation avec Ombrelien...
-            </div>
-          ) : (
-            messages.map(msg => (
-              msg.role === 'user' ? (
-                <div key={msg.id} style={{ 
-                  marginBottom: '20px',
-                  display: 'flex',
-                  justifyContent: 'flex-end'
-                }}>
-                  <div style={{
-                    maxWidth: '85%',
-                    padding: '12px 16px',
-                    borderRadius: '12px',
-                    background: '#2563eb',
-                    color: 'white',
-                    lineHeight: '1.5',
-                    textAlign: 'left'
-                  }}>
-                    <div style={{ 
-                      fontSize: '12px', 
-                      color: '#bfdbfe',
-                      marginBottom: '6px',
-                      fontWeight: '500'
-                    }}>
-                      Vous
-                    </div>
-                    <div style={{ fontSize: '14px' }}>
-                      {msg.content}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div key={msg.id} style={{ 
-                  marginBottom: '24px',
-                  width: '100%',
-                  display: 'flex',
-                  justifyContent: 'center'
-                }}>
-                  <div style={{ 
-                    width: '100%',
-                    maxWidth: '800px'
-                  }}>
-                    <div style={{
-                      fontSize: '12px', 
-                      color: '#888',
-                      marginBottom: '8px',
-                      fontWeight: '500',
-                      paddingLeft: '4px',
-                      textAlign: 'left'
-                    }}>
-                      🌑 Ombrelien
-                    </div>
-                    
-                    <div style={{
-                      padding: '20px 24px',
-                      background: 'rgba(26, 26, 46, 0.6)',
-                      border: '1px solid rgba(96, 165, 250, 0.2)',
-                      borderRadius: '12px',
-                      color: 'white',
-                      lineHeight: '1.6',
-                      textAlign: 'left'
-                    }}>
-                      <ReactMarkdown
-                        rehypePlugins={[rehypeHighlight]}
-                        components={{
-                          code: ({node, className, children, ...props}: any) => {
-                            const inline = !className?.includes('language-')
-                            return !inline ? (
-                              <pre style={{
-                                background: '#0f172a',
-                                padding: '16px',
-                                borderRadius: '8px',
-                                overflow: 'auto',
-                                margin: '12px 0',
-                                border: '1px solid #334155'
-                              }}>
-                                <code className={className} {...props}>
-                                  {children}
-                                </code>
-                              </pre>
-                            ) : (
-                              <code style={{
-                                background: '#334155',
-                                padding: '3px 8px',
-                                borderRadius: '4px',
-                                fontSize: '0.9em',
-                                border: '1px solid #475569'
-                              }} {...props}>
-                                {children}
-                              </code>
-                            )
-                          },
-                          a: ({children, href}) => (
-                            <a href={href} style={{color: '#60a5fa', textDecoration: 'underline'}} target="_blank" rel="noopener noreferrer">
-                              {children}
-                            </a>
-                          ),
-                          h1: ({children}) => (
-                            <h1 style={{fontSize: '1.5em', margin: '20px 0 12px 0', color: '#60a5fa'}}>
-                              {children}
-                            </h1>
-                          ),
-                          h2: ({children}) => (
-                            <h2 style={{fontSize: '1.3em', margin: '16px 0 10px 0', color: '#60a5fa'}}>
-                              {children}
-                            </h2>
-                          ),
-                          blockquote: ({children}) => (
-                            <blockquote style={{
-                              borderLeft: '4px solid #60a5fa',
-                              paddingLeft: '16px',
-                              margin: '16px 0',
-                              fontStyle: 'italic',
-                              color: '#cbd5e1',
-                              background: 'rgba(96, 165, 250, 0.1)',
-                              borderRadius: '4px',
-                              padding: '12px 16px'
-                            }}>
-                              {children}
-                            </blockquote>
-                          ),
-                          p: ({children}) => (
-                            <p style={{margin: '8px 0', lineHeight: '1.7'}}>
-                              {children}
-                            </p>
-                          )
-                        }}
-                      >
-                        {msg.content}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
-                </div>
-              )
-            ))
-          )}
+      {/* Messages */}
+<div className="flex-1 p-5 overflow-y-auto bg-bandhu-dark">
+  {!currentConversation ? (
+    <div className="flex items-center justify-center h-full text-gray-500 text-base">
+      Sélectionnez une conversation ou créez-en une nouvelle
+    </div>
+  ) : messages.length === 0 ? (
+    <div className="flex items-center justify-center h-full text-gray-500 text-base">
+      Commencez votre conversation avec Ombrelien...
+    </div>
+  ) : (
+    messages.map(msg => (
+  <div key={msg.id} className="mb-5 flex justify-center">
+    <div className="w-full max-w-4xl">
+      {msg.role === 'user' ? (
+  // MESSAGE USER - style Ombrelien en violet
+  <div className="max-w-md">
+    <div className="text-xs text-bandhu-primary mb-1.5 font-medium">Vous</div>
+    <div className="px-5 py-3 rounded-xl bg-gradient-to-br from-blue-900/90 to-ble-700/90 border border-bandhu-primary/30 text-gray-100 shadow-lg shadow-bandhu-secondary/10">
+      <div className="text-base leading-relaxed">{msg.content}</div>
+    </div>
+  </div>
+) : (
+        // MESSAGE OMBRELIEN - aligné à gauche
+        <div>
+          <div className="text-xs text-bandhu-secondary mb-2 font-medium flex items-center gap-2">
+            <span className="text-lg">🌑</span> Ombrelien
+          </div>
           
-          {isSending && (
-            <div style={{ 
-              marginBottom: '20px',
-              display: 'flex',
-              justifyContent: 'center'
-            }}>
-              <div style={{ 
-                width: '100%',
-                maxWidth: '800px'
-              }}>
-                <div style={{
-                  fontSize: '12px', 
-                  color: '#888',
-                  marginBottom: '8px',
-                  fontWeight: '500',
-                  paddingLeft: '4px'
-                }}>
-                  🌑 Ombrelien
-                </div>
-                <div style={{
-                  padding: '20px 24px',
-                  background: 'rgba(26, 26, 46, 0.6)',
-                  border: '1px solid rgba(96, 165, 250, 0.2)',
-                  borderRadius: '12px',
-                  color: '#888',
-                  lineHeight: '1.6'
-                }}>
-                  En train de réfléchir...
-                </div>
-              </div>
-            </div>
-          )}
+          <div className="px-6 py-5 bg-gradient-to-br from-gray-900/90 to-gray-800/90 border border-bandhu-primary/30 rounded-2xl text-gray-100 shadow-lg shadow-bandhu-secondary/10">
+            <ReactMarkdown
+              rehypePlugins={[rehypeHighlight]}
+              components={{
+                code: ({node, inline, className, children}: any) => {
+                  const isInline = !className?.includes('language-')
+                  return !isInline ? (
+                    <pre className="bg-black/50 p-4 rounded-lg overflow-auto my-4 border border-bandhu-primary/20">
+                      <code className={className}>
+                        {children}
+                      </code>
+                    </pre>
+                  ) : (
+                    <code className="bg-bandhu-primary/20 px-2 py-0.5 rounded text-sm text-bandhu-primary">
+                      {children}
+                    </code>
+                  )
+                },
+                a: ({children, href}: any) => (
+                  <a href={href} className="text-bandhu-primary hover:text-bandhu-secondary underline transition" target="_blank" rel="noopener noreferrer">
+                    {children}
+                  </a>
+                ),
+                h1: ({children}: any) => (
+                  <h1 className="text-2xl font-bold my-4 text-bandhu-primary">
+                    {children}
+                  </h1>
+                ),
+                h2: ({children}: any) => (
+                  <h2 className="text-xl font-bold my-3 text-bandhu-primary">
+                    {children}
+                  </h2>
+                ),
+                blockquote: ({children}: any) => (
+                  <blockquote className="border-l-4 border-bandhu-secondary pl-4 my-4 italic text-gray-300 bg-bandhu-secondary/10 rounded-r py-2">
+                    {children}
+                  </blockquote>
+                ),
+                p: ({children}: any) => (
+                  <p className="my-2 leading-7 text-gray-200">
+                    {children}
+                  </p>
+                ),
+                ul: ({children}: any) => (
+                  <ul className="list-disc list-inside my-3 space-y-1 text-gray-200">
+                    {children}
+                  </ul>
+                ),
+                ol: ({children}: any) => (
+                  <ol className="list-decimal list-inside my-3 space-y-1 text-gray-200">
+                    {children}
+                  </ol>
+                ),
+              }}
+            >
+              {msg.content}
+            </ReactMarkdown>
+          </div>
         </div>
+      )}
+    </div>
+  </div>
+))
+  )}
+  
+  {isSending && (
+    <div className="mb-5 flex justify-center">
+      <div className="w-full max-w-3xl">
+        <div className="text-xs text-gray-500 mb-2 font-medium pl-1">
+          🌑 Ombrelien
+        </div>
+        <div className="px-6 py-5 bg-bandhu-card/60 border border-bandhu-cardBorder rounded-xl text-gray-500 leading-relaxed animate-pulse">
+          En train de réfléchir...
+        </div>
+      </div>
+    </div>
+  )}
+</div>
 
         {/* Input */}
-        <div style={{ 
-          padding: '20px', 
-          borderTop: '1px solid #333',
-          background: '#16213e'
-        }}>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+        <div className="p-5 border-t border-gray-800 bg-gray-900/30">
+          <div className="flex gap-3 items-end">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Parlez à Ombrelien..."
-              style={{ 
-                flex: 1, 
-                padding: '12px', 
-                background: '#1a1a2e', 
-                color: 'white', 
-                border: '1px solid #333', 
-                borderRadius: '8px',
-                fontSize: '14px',
-                lineHeight: '1.4',
-                resize: 'none',
-                minHeight: '44px',
-                maxHeight: '120px',
-                fontFamily: 'inherit'
-              }}
+              className="flex-1 px-3 py-3 bg-gray-900 text-white border border-gray-700 rounded-lg text-sm leading-tight resize-none min-h-[44px] max-h-[120px] focus:outline-none focus:ring-2 focus:ring-bandhu-primary focus:border-transparent"
               onKeyPress={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault()
@@ -935,17 +664,11 @@ export default function ChatPage() {
             <button 
               onClick={sendMessage}
               disabled={!input.trim() || isSending}
-              style={{ 
-                padding: '12px 20px', 
-                background: input.trim() && !isSending ? '#2563eb' : '#404040',
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '8px',
-                cursor: input.trim() && !isSending ? 'pointer' : 'not-allowed',
-                fontSize: '14px',
-                fontWeight: '500',
-                minHeight: '44px'
-              }}
+              className={`px-5 py-3 rounded-lg text-sm font-medium min-h-[44px] transition-transform ${
+                input.trim() && !isSending
+                  ? 'bg-gradient-to-r from-bandhu-primary to-bandhu-secondary text-white hover:scale-105 cursor-pointer'
+                  : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              }`}
             >
               {isSending ? 'Envoi...' : 'Envoyer'}
             </button>
@@ -957,14 +680,7 @@ export default function ChatPage() {
       {/* Click outside pour fermer les menus */}
       {openMenuId && (
         <div 
-          style={{ 
-            position: 'fixed', 
-            top: 0, 
-            left: 0, 
-            right: 0, 
-            bottom: 0, 
-            zIndex: 5 
-          }}
+          className="fixed inset-0 z-10"
           onClick={() => setOpenMenuId(null)}
         />
       )}

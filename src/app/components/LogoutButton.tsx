@@ -13,18 +13,9 @@ export default function LogoutButton() {
       onClick={async () => {
         await signOut({ redirect: false })
         router.push('/')
-        router.refresh() // ← FORCE REFRESH !
+        router.refresh()
       }}
-      style={{
-        position: 'fixed',
-        top: '1rem',
-        right: '1rem',
-        padding: '0.5rem 1rem',
-        background: '#eee',
-        border: '1px solid #ccc',
-        borderRadius: '4px',
-        cursor: 'pointer'
-      }}
+      className="fixed top-4 right-4 px-4 py-2 bg-gradient-to-br from-blue-900/90 to-ble-700/90 hover:from-red-700 hover:to-red-800 text-white rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-lg z-50"
     >
       Se déconnecter
     </button>
