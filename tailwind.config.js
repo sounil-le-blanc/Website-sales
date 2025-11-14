@@ -9,9 +9,9 @@ module.exports = {
     extend: {
       colors: {
         bandhu: {
-          primary: '#60a5fa',    // Bleu Bandhu
-          secondary: '#a855f7',  // Violet Bandhu
-          dark: '#0f172a',       // Fond sombre
+          primary: '#60a5fa',
+          secondary: '#a855f7',
+          dark: '#0f172a',
           card: 'rgba(96,165,250,0.1)',
           cardBorder: 'rgba(96,165,250,0.3)',
         }

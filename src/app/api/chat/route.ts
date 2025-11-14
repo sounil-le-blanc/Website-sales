@@ -1,8 +1,8 @@
 import OpenAI from 'openai'
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]/route'
+import { PrismaClient } from '@prisma/client'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -18,10 +18,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
-    const { message, conversationId } = await request.json()
+    const { message, date } = await request.json()
 
-    if (!message || !conversationId) {
-      return NextResponse.json({ error: 'Message et conversationId requis' }, { status: 400 })
+    if (!message) {
+      return NextResponse.json({ error: 'Message requis' }, { status: 400 })
     }
 
     // Récupérer l'utilisateur
@@ -33,30 +33,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 })
     }
 
-    // Vérifier que la conversation appartient à l'utilisateur
-    const conversation = await prisma.conversation.findFirst({
-      where: { 
-        id: conversationId,
-        userId: user.id
+    // Date du jour si non fournie
+    const targetDate = date || new Date().toISOString().split('T')[0] // "YYYY-MM-DD"
+
+    // Trouver ou créer la DayTape du jour
+    let dayTape = await prisma.dayTape.findUnique({
+      where: {
+        userId_date: {
+          userId: user.id,
+          date: targetDate
+        }
+      },
+      include: {
+        events: {
+          orderBy: { createdAt: 'asc' },
+          take: 20 // Derniers 20 events pour contexte
+        }
       }
     })
 
-    if (!conversation) {
-      return NextResponse.json({ error: 'Conversation non trouvée' }, { status: 404 })
+    // Créer DayTape si elle n'existe pas
+    if (!dayTape) {
+      dayTape = await prisma.dayTape.create({
+        data: {
+          userId: user.id,
+          date: targetDate
+        },
+        include: {
+          events: true
+        }
+      })
     }
 
-    // Charger le contexte (derniers 20 messages)
-    const contextMessages = await prisma.message.findMany({
-      where: { conversationId: conversationId },
-      orderBy: { createdAt: 'asc' },
-      take: 20
-    })
-
-    // Construire les messages pour OpenAI
-    const openaiMessages = contextMessages.map(msg => ({
-      role: msg.role as "user" | "assistant",
-      content: msg.content
-    }))
+    // Construire le contexte pour OpenAI (uniquement les messages)
+const contextMessages = dayTape.events
+  .filter((e: { type: string }) => e.type === 'USER_MESSAGE' || e.type === 'AI_MESSAGE')
+  .map((e: { role: string | null; content: string }) => ({
+    role: e.role as "user" | "assistant",
+    content: e.content
+  }))
 
     // Appeler Ombrelien via OpenAI
     const response = await openai.chat.completions.create({
@@ -64,55 +79,50 @@ export async function POST(request: NextRequest) {
       messages: [
         { 
           role: "system", 
-          content: process.env.OMBRELIEN_SYSTEM_PROMPT || "Tu es Ombrelien, l'intelligence artificielle mystérieuse de l'équipage Bandhu. Tu navigues dans les ombres de la connaissance pour apporter des réponses éclairées."
+          content: process.env.OMBRELIEN_SYSTEM_PROMPT || 
+            "Tu es Ombrelien, l'intelligence artificielle mystérieuse de l'équipage Bandhu. Tu navigues dans les ombres de la connaissance pour apporter des réponses éclairées."
         },
-        ...openaiMessages,
+        ...contextMessages,
         { role: "user", content: message }
       ],
       temperature: 1,
     })
 
-    const aiResponse = response.choices[0].message.content || "Je rencontre une perturbation dans ma connexion vectorielle..."
+    const aiResponse = response.choices[0].message.content || 
+      "Je rencontre une perturbation dans ma connexion vectorielle..."
 
-    // Sauvegarder le message utilisateur
-    await prisma.message.create({
+    // Sauvegarder le message utilisateur (Event)
+    await prisma.event.create({
       data: {
-        content: message,
+        dayTapeId: dayTape.id,
+        type: 'USER_MESSAGE',
         role: 'user',
-        conversationId: conversationId
+        content: message
       }
     })
 
-    // Sauvegarder la réponse de l'IA
-    await prisma.message.create({
+    // Sauvegarder la réponse de l'IA (Event)
+    await prisma.event.create({
       data: {
-        content: aiResponse,
+        dayTapeId: dayTape.id,
+        type: 'AI_MESSAGE',
         role: 'assistant',
-        conversationId: conversationId
+        content: aiResponse
       }
     })
 
-    // Mettre à jour le timestamp de la conversation
-    const updatedConversation = await prisma.conversation.update({
-      where: { id: conversationId },
-      data: { 
-        updatedAt: new Date(),
-        // Mettre à jour le titre si c'est le premier message
-        title: conversation.title === 'Nouvelle conversation' ? 
-          message.substring(0, 50) + (message.length > 50 ? '...' : '') : 
-          conversation.title
-      }
-    })
-
-    // Récupérer tous les messages de la conversation mise à jour
-    const allMessages = await prisma.message.findMany({
-      where: { conversationId: conversationId },
+    // Récupérer tous les events de la DayTape mise à jour
+    const allEvents = await prisma.event.findMany({
+      where: { dayTapeId: dayTape.id },
       orderBy: { createdAt: 'asc' }
     })
 
     return NextResponse.json({ 
-      messages: allMessages,
-      conversation: updatedConversation
+      events: allEvents,
+      dayTape: {
+        id: dayTape.id,
+        date: dayTape.date
+      }
     })
 
   } catch (error) {

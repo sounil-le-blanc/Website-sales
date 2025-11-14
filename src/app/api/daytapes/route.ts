@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-// GET /api/conversations - Récupérer toutes les conversations de l'utilisateur
+// GET /api/daytapes - Liste des DayTapes de l'utilisateur
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession()
@@ -13,7 +13,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
-    // Récupérer l'utilisateur
     const user = await prisma.user.findUnique({
       where: { email: session.user.email }
     })
@@ -22,35 +21,35 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 })
     }
 
-    // Récupérer les conversations
-    const conversations = await prisma.conversation.findMany({
+    // Récupérer les DayTapes avec compteur d'events
+    const dayTapes = await prisma.dayTape.findMany({
       where: { userId: user.id },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { date: 'desc' },
       select: {
         id: true,
-        title: true,
+        date: true,
         createdAt: true,
         updatedAt: true,
         _count: {
-          select: { messages: true }
+          select: { events: true }
         }
       }
     })
 
     return NextResponse.json({ 
-      conversations: conversations.map(conv => ({
-        ...conv,
-        messageCount: conv._count.messages
+      dayTapes: dayTapes.map(dt => ({
+        ...dt,
+        eventCount: dt._count.events
       }))
     })
 
   } catch (error) {
-    console.error('Erreur lors de la récupération des conversations:', error)
+    console.error('Erreur lors de la récupération des DayTapes:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
 
-// POST /api/conversations - Créer une nouvelle conversation
+// POST /api/daytapes - Créer une nouvelle DayTape (rare, normalement auto)
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession()
@@ -59,9 +58,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
-    const { title } = await request.json()
+    const { date } = await request.json() // Format "YYYY-MM-DD"
 
-    // Récupérer l'utilisateur
     const user = await prisma.user.findUnique({
       where: { email: session.user.email }
     })
@@ -70,18 +68,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 })
     }
 
-    // Créer la conversation
-    const conversation = await prisma.conversation.create({
-      data: {
-        title: title || 'Nouvelle conversation',
-        userId: user.id
+    // Créer ou récupérer DayTape du jour
+    const dayTape = await prisma.dayTape.upsert({
+      where: {
+        userId_date: {
+          userId: user.id,
+          date: date || new Date().toISOString().split('T')[0]
+        }
+      },
+      update: {},
+      create: {
+        userId: user.id,
+        date: date || new Date().toISOString().split('T')[0]
       }
     })
 
-    return NextResponse.json({ conversation })
+    return NextResponse.json({ dayTape })
 
   } catch (error) {
-    console.error('Erreur lors de la création de la conversation:', error)
+    console.error('Erreur lors de la création de la DayTape:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
