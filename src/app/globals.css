@@ -37,3 +37,7 @@
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out;
 }
+
+textarea.scrollbar-bandhu::-webkit-scrollbar {
+  width: 6px !important;
+}
